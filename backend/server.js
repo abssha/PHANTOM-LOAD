@@ -8,6 +8,7 @@ import requireAuth from './middleware/auth.js';
 
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import auditsRouter from './routes/audits.js';
 import chatRouter from './routes/chat.js';
 import roomsRouter from './routes/rooms.js';
 import appliancesRouter from './routes/appliances.js';
@@ -24,6 +25,7 @@ app.use(requestLogger);
 // Routes
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/audits', auditsRouter);
 app.use('/api/chat', requireAuth, chatRouter);
 app.use('/api/rooms', requireAuth, roomsRouter);
 app.use('/api/rooms', requireAuth, appliancesRouter);   // nested: /api/rooms/:id/appliances
