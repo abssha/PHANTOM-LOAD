@@ -1,5 +1,7 @@
 # Phantom Load
 
+Live app: https://phantom-load.vercel.app/
+
 Phantom Load is a full-stack home energy audit application. It helps households record appliances room by room, estimate electricity consumption and monthly costs, identify standby-power waste, and get tailored energy-saving guidance from an AI advisor.
 
 The project is built for a practical workflow: create an account, add the rooms in a home, record each appliance's usage pattern, and use the dashboard to understand what is driving the bill.
