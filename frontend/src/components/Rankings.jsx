@@ -31,6 +31,7 @@ function Rankings({ allAppliances, ratePerUnit }) {
         yearlyCO2: co2(yearlyKwh(daily)),
       }
     })
+    // Sort by updated waste score (which heavily weights yearly cost)
     .sort((left, right) => right.score - left.score)
 
   const recommendations = ranked.slice(0, 3).map((appliance) => {
@@ -98,12 +99,12 @@ function Rankings({ allAppliances, ratePerUnit }) {
     <div className="ranking-stack">
       <div className="section-head">
         <div>
-          <p className="panel-heading">Risk-first ranking</p>
-          <h2 className="section-title">Energy Vampires</h2>
+          <p className="panel-heading">Top cost ranking</p>
+          <h2 className="section-title">Biggest Bill Drivers</h2>
         </div>
         <p className="section-copy">
-          This is the fastest judge-friendly answer to the question, which appliances are hurting
-          me the most right now?
+          This list highlights appliances contributing most to your yearly bill. Waste scores still
+          appear to show standby/usage risk.
         </p>
       </div>
 

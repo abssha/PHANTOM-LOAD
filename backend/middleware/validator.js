@@ -51,6 +51,7 @@ export function validateLogin(req, res, next) {
 export function validateAuditCreate(req, res, next) {
   const {
     _id,
+    id,
     label,
     createdAt,
     ratePerUnit,
@@ -58,19 +59,24 @@ export function validateAuditCreate(req, res, next) {
     totalMonthlyCost,
     totalCO2,
     topVampires,
-    roomSummary
+    roomSummary,
+    inventorySnapshot
   } = req.body;
 
-  if (!_id || typeof _id !== 'string' || !_id.trim()) {
-    return res.status(400).json({ error: '_id is required and must be a non-empty string' });
+  if (_id !== undefined && (typeof _id !== 'string' || !_id.trim())) {
+    return res.status(400).json({ error: '_id must be a non-empty string when provided' });
+  }
+
+  if (id !== undefined && (typeof id !== 'string' || !id.trim())) {
+    return res.status(400).json({ error: 'id must be a non-empty string when provided' });
   }
 
   if (!label || typeof label !== 'string' || !label.trim()) {
     return res.status(400).json({ error: 'label is required and must be a non-empty string' });
   }
 
-  if (!createdAt || Number.isNaN(Date.parse(createdAt))) {
-    return res.status(400).json({ error: 'createdAt is required and must be a valid ISO date string' });
+  if (createdAt !== undefined && Number.isNaN(Date.parse(createdAt))) {
+    return res.status(400).json({ error: 'createdAt must be a valid ISO date string when provided' });
   }
 
   if (!isFiniteNumber(ratePerUnit)) {
@@ -135,6 +141,10 @@ export function validateAuditCreate(req, res, next) {
     if (!isFiniteNumber(room.monthlyCost)) {
       return res.status(400).json({ error: 'Each roomSummary entry must include a numeric monthlyCost' });
     }
+  }
+
+  if (inventorySnapshot !== undefined && !Array.isArray(inventorySnapshot)) {
+    return res.status(400).json({ error: 'inventorySnapshot must be an array when provided' });
   }
 
   next();

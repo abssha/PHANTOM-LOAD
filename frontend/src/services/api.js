@@ -101,6 +101,8 @@ function mapAuditToApi(audit) {
   const inventorySnapshot = Array.isArray(audit?.inventorySnapshot) ? audit.inventorySnapshot : []
 
   return {
+    _id: audit?.id,
+    createdAt: audit?.createdAt,
     label: audit?.label ?? 'Saved audit',
     ratePerUnit: toNumber(audit?.ratePerUnit, 8),
     totalMonthlyKwh: toNumber(audit?.totalMonthlyKwh),
@@ -164,6 +166,11 @@ export async function loginUser(payload) {
     token: data?.token ?? null,
     user: mapUserFromApi(data?.user),
   }
+}
+
+export async function getCurrentUser() {
+  const data = await request('/api/auth/me', { method: 'GET' })
+  return mapUserFromApi(data?.user)
 }
 
 export async function getRooms() {

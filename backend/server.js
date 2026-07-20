@@ -25,7 +25,7 @@ app.use(requestLogger);
 // Routes
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/audits', auditsRouter);
+app.use('/api/audits', requireAuth, auditsRouter);
 app.use('/api/chat', requireAuth, chatRouter);
 app.use('/api/rooms', requireAuth, roomsRouter);
 app.use('/api/rooms', requireAuth, appliancesRouter);   // nested: /api/rooms/:id/appliances

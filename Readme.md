@@ -73,6 +73,7 @@ GEMINI_API_KEY=your_gemini_api_key
 JWT_SECRET=use_a_long_random_secret
 JWT_EXPIRES_IN=7d
 PORT=your_backend_port
+CORS_ORIGIN=your_frontend_origin
 ```
 
 `JWT_SECRET` should be a strong, private value. Do not commit `.env` files or real credentials to source control.

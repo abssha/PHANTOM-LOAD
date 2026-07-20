@@ -17,6 +17,10 @@ function serializeUser(user) {
 }
 
 export const authController = {
+  me(req, res) {
+    res.json({ user: serializeUser(req.user) });
+  },
+
   async register(req, res, next) {
     try {
       const name = req.body.name.trim();

@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'inventory', label: 'Inventory' },
@@ -8,6 +10,13 @@ const TABS = [
 ]
 
 function TabNav({ activeTab, setActiveTab, theme, setTheme, userName, onLogout }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId)
+    setMenuOpen(false)
+  }
+
   return (
     <header className="tab-nav">
       <div className="brand-block">
@@ -20,14 +29,24 @@ function TabNav({ activeTab, setActiveTab, theme, setTheme, userName, onLogout }
         </div>
       </div>
 
-      <div className="nav-actions">
-        <nav className="tab-list" aria-label="Primary">
+      <button
+        type="button"
+        className={`nav-burger ${menuOpen ? 'nav-burger-open' : ''}`}
+        onClick={() => setMenuOpen((current) => !current)}
+        aria-expanded={menuOpen}
+        aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+      >
+        <span aria-hidden="true">☰</span>
+      </button>
+
+      <div className={`nav-actions ${menuOpen ? 'nav-actions-open' : ''}`}>
+        <nav className="tab-list" aria-label="Primary navigation">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               className={`nav-tab ${activeTab === tab.id ? 'nav-tab-active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
             >
               {tab.label}
             </button>

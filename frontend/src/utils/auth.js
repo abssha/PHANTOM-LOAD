@@ -16,13 +16,7 @@ export function loadStoredAuth() {
 
     return {
       token: typeof parsed?.token === 'string' ? parsed.token : null,
-      user:
-        parsed?.user &&
-        typeof parsed.user === 'object' &&
-        typeof parsed.user._id === 'string' &&
-        typeof parsed.user.email === 'string'
-          ? parsed.user
-          : null,
+      user: null,
     }
   } catch {
     return { token: null, user: null }
@@ -35,7 +29,7 @@ export function saveStoredAuth(authState) {
   }
 
   try {
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState))
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ token: authState?.token ?? null }))
   } catch {
     // Ignore storage failures so auth flow can continue in memory.
   }

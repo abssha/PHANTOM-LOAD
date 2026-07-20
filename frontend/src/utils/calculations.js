@@ -28,8 +28,13 @@ export function wasteScore(appliance, ratePerUnit) {
     appliance.standby,
     appliance.standbyHours,
   )
-  const costScore = Math.min(cost(yearlyKwh(daily), ratePerUnit) / 50, 40)
-  const standbyScore = appliance.standby ? Math.min(appliance.standbyHours * 2, 30) : 0
-  const usageScore = Math.min(appliance.dailyHours * 2, 30)
+  // Weight the estimated yearly cost more heavily so ranking reflects bill impact
+  const yearlyCost = cost(yearlyKwh(daily), ratePerUnit)
+  // scale cost into score space; cap reasonably to avoid runaway values
+  const costScore = Math.min(yearlyCost / 50, 200)
+  // standby and usage matter but are secondary to cost
+  const standbyScore = appliance.standby ? Math.min(appliance.standbyHours * 0.5, 20) : 0
+  const usageScore = Math.min(appliance.dailyHours * 1.2, 40)
+
   return Math.round(costScore + standbyScore + usageScore)
 }

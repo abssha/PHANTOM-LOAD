@@ -12,6 +12,7 @@ import {
   deleteAppliance as deleteApplianceRequest,
   deleteRoom as deleteRoomRequest,
   fetchInitialData,
+  getCurrentUser,
   loginUser as loginUserRequest,
   registerUser as registerUserRequest,
   setAuthToken,
@@ -52,117 +53,6 @@ const TAB_LABELS = {
   game: 'Energy Game',
   chat: 'AI Advisor',
 }
-
-const DEMO_ROOMS = [
-  {
-    id: 'room_1',
-    name: 'Living Room',
-    appliances: [
-      {
-        id: 'a1',
-        name: 'TV (LED 43")',
-        wattage: 80,
-        quantity: 1,
-        dailyHours: 5,
-        standby: true,
-        standbyHours: 19,
-        isCustom: false,
-      },
-      {
-        id: 'a2',
-        name: 'Fan (Ceiling)',
-        wattage: 75,
-        quantity: 1,
-        dailyHours: 8,
-        standby: false,
-        standbyHours: 0,
-        isCustom: false,
-      },
-      {
-        id: 'a3',
-        name: 'WiFi Router',
-        wattage: 10,
-        quantity: 1,
-        dailyHours: 24,
-        standby: true,
-        standbyHours: 0,
-        isCustom: false,
-      },
-    ],
-  },
-  {
-    id: 'room_2',
-    name: 'Bedroom',
-    appliances: [
-      {
-        id: 'a4',
-        name: 'AC (1.5 Ton)',
-        wattage: 1500,
-        quantity: 1,
-        dailyHours: 6,
-        standby: true,
-        standbyHours: 18,
-        isCustom: false,
-      },
-      {
-        id: 'a5',
-        name: 'Fan (Ceiling)',
-        wattage: 75,
-        quantity: 1,
-        dailyHours: 8,
-        standby: false,
-        standbyHours: 0,
-        isCustom: false,
-      },
-      {
-        id: 'a6',
-        name: 'TV (LED 43")',
-        wattage: 80,
-        quantity: 1,
-        dailyHours: 3,
-        standby: false,
-        standbyHours: 0,
-        isCustom: false,
-      },
-    ],
-  },
-  {
-    id: 'room_3',
-    name: 'Kitchen',
-    appliances: [
-      {
-        id: 'a7',
-        name: 'Refrigerator',
-        wattage: 150,
-        quantity: 1,
-        dailyHours: 24,
-        standby: false,
-        standbyHours: 0,
-        isCustom: false,
-      },
-      {
-        id: 'a8',
-        name: 'Microwave',
-        wattage: 1200,
-        quantity: 1,
-        dailyHours: 0.5,
-        standby: false,
-        standbyHours: 0,
-        isCustom: false,
-      },
-      {
-        id: 'a9',
-        name: 'Geyser',
-        wattage: 2000,
-        quantity: 1,
-        dailyHours: 1,
-        standby: false,
-        standbyHours: 0,
-        isCustom: false,
-      },
-    ],
-  },
-]
 
 function renderTab(activeTab, sharedProps) {
   switch (activeTab) {
@@ -234,14 +124,6 @@ function persistentStateReducer(state, action) {
         auditSnapshots: Array.isArray(action.auditSnapshots) ? action.auditSnapshots : state.auditSnapshots,
         lastSavedAt: action.timestamp ?? state.lastSavedAt,
       }
-    case 'hydrate_local_user_state':
-      return {
-        ...state,
-        rooms: action.rooms,
-        ratePerUnit: action.ratePerUnit,
-        auditSnapshots: action.auditSnapshots,
-        lastSavedAt: action.lastSavedAt,
-      }
     case 'prepare_authenticated_session':
       return {
         ...state,
@@ -276,13 +158,11 @@ function App() {
     undefined,
     () =>
       loadStoredAppState({
-        fallbackRooms: DEMO_ROOMS,
         fallbackRatePerUnit: 8,
-        userId: loadStoredAuth().user?._id ?? null,
       }),
   )
   const { rooms, ratePerUnit, auditSnapshots, lastSavedAt, theme } = persistentState
-  const isAuthenticated = Boolean(authState.token && authState.user?._id)
+  const hasAuthToken = Boolean(authState.token)
 
   const allAppliances = rooms.flatMap((room) =>
     room.appliances.map((appliance) => ({
@@ -322,52 +202,35 @@ function App() {
   useEffect(() => {
     setAuthToken(authState.token)
 
-    if (isAuthenticated) {
+    if (hasAuthToken) {
       saveStoredAuth(authState)
     } else {
       clearStoredAuth()
     }
-  }, [authState, isAuthenticated])
+  }, [authState, hasAuthToken])
 
   useEffect(() => {
     saveStoredAppState({
-      rooms,
-      ratePerUnit,
-      auditSnapshots,
-      lastSavedAt,
       theme,
-      userId: authState.user?._id ?? null,
     })
-  }, [rooms, ratePerUnit, auditSnapshots, lastSavedAt, theme, authState.user?._id])
+  }, [theme])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!hasAuthToken) {
       setAppBootState('locked')
       return undefined
     }
 
     let ignore = false
     setAppBootState('loading')
-    const localUserState = loadStoredAppState({
-      fallbackRooms: [],
-      fallbackRatePerUnit: 8,
-      userId: authState.user?._id ?? null,
-    })
-
-    dispatch({
-      type: 'hydrate_local_user_state',
-      rooms: localUserState.rooms,
-      ratePerUnit: localUserState.ratePerUnit,
-      auditSnapshots: localUserState.auditSnapshots,
-      lastSavedAt: localUserState.lastSavedAt,
-    })
 
     async function hydrateRemoteState() {
       try {
+        setAuthToken(authState.token)
         const health = await checkHealth()
 
         if (ignore) {
@@ -385,6 +248,14 @@ function App() {
       }
 
       try {
+        const currentUser = authState.user?._id ? authState.user : await getCurrentUser()
+        if (!ignore && currentUser?._id && !authState.user?._id) {
+          setAuthState((currentAuthState) => ({
+            ...currentAuthState,
+            user: currentUser,
+          }))
+        }
+
         const remoteState = await fetchInitialData()
 
         if (ignore) {
@@ -401,7 +272,9 @@ function App() {
           timestamp: new Date().toISOString(),
         })
       } catch (error) {
-        console.warn('Remote data sync failed after health check. Using cached local data instead.', error)
+        console.warn('Remote data sync failed after health check.', error)
+        clearStoredAuth()
+        setAuthState({ token: null, user: null })
       } finally {
         if (!ignore) {
           setAppBootState('ready')
@@ -414,7 +287,7 @@ function App() {
     return () => {
       ignore = true
     }
-  }, [isAuthenticated, authState.user?._id])
+  }, [hasAuthToken, authState.token, authState.user])
 
   function setLocalRooms(nextRooms) {
     dispatch({
@@ -542,16 +415,11 @@ function App() {
         timestamp: new Date().toISOString(),
       })
     } catch (error) {
-      console.warn('Audit history sync failed. Saving snapshot on this device only.', error)
-      dispatch({
-        type: 'save_snapshot',
-        snapshot,
-        timestamp: new Date().toISOString(),
-      })
+      console.warn('Audit history sync failed. Snapshot was not saved.', error)
       window.alert(
         error instanceof Error
-          ? `${error.message} Snapshot was kept on this device only.`
-          : 'Could not sync this audit to the backend. Snapshot was kept on this device only.',
+          ? `${error.message} Snapshot was not saved.`
+          : 'Could not sync this audit to the backend. Snapshot was not saved.',
       )
     }
   }
@@ -626,11 +494,9 @@ function App() {
     onNavigate: handleTabChange,
   }
 
-  if (!isAuthenticated) {
+  if (!hasAuthToken) {
     return (
       <div className="app-shell">
-        <div className="app-glow app-glow-left" aria-hidden="true" />
-        <div className="app-glow app-glow-right" aria-hidden="true" />
         <main className="app-main">
           <AuthScreen
             theme={theme}
@@ -645,8 +511,6 @@ function App() {
 
   return (
     <div className="app-shell">
-      <div className="app-glow app-glow-left" aria-hidden="true" />
-      <div className="app-glow app-glow-right" aria-hidden="true" />
       <TabNav
         activeTab={activeTab}
         setActiveTab={handleTabChange}

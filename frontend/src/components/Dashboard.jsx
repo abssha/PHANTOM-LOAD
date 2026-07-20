@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { cost, dailyKwh, monthlyKwh, yearlyKwh } from '../utils/calculations'
+import { cost, dailyKwh, monthlyKwh, yearlyKwh, wasteScore } from '../utils/calculations'
 import { formatCO2, formatINR, formatKwh } from '../utils/formatting'
 
 const PIE_COLORS = ['#00ff88', '#ffaa00', '#ff4444', '#4488ff', '#f47fff', '#666666']
@@ -109,9 +109,14 @@ function Dashboard({
     pieSlices.push({ name: 'Others', value: othersValue })
   }
 
-  const topAppliance = [...allAppliances].sort(
-    (left, right) => getMonthlyCost(right, ratePerUnit) - getMonthlyCost(left, ratePerUnit),
-  )[0]
+  const topAppliance = [...allAppliances]
+    .slice()
+    .sort((left, right) => {
+      const ls = wasteScore(left, ratePerUnit)
+      const rs = wasteScore(right, ratePerUnit)
+      if (rs !== ls) return rs - ls
+      return getMonthlyCost(right, ratePerUnit) - getMonthlyCost(left, ratePerUnit)
+    })[0]
 
   const topCost = topAppliance ? getMonthlyCost(topAppliance, ratePerUnit) : 0
   const topPct = totalMonthlyCost ? Math.round((topCost / totalMonthlyCost) * 100) : 0
